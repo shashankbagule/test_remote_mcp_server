@@ -7,8 +7,10 @@ CATEGORIES_PATH = os.path.join(
     os.path.dirname(__file__),
     "categories.json"
 )
-DB_PATH = os.path.join(os.path.dirname(__file__), "expenses.db")
-
+DB_PATH = os.environ.get(
+    "DB_PATH",
+    "/tmp/expenses.db"
+)
 mcp = FastMCP("Expense Tracker")
 
 def load_categories():
