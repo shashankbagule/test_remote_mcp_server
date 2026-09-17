@@ -1,4 +1,6 @@
 from fastmcp import FastMCP
+from contextlib import asynccontextmanager
+from collections.abc import AsyncIterator
 import os
 import aiosqlite
 import json
@@ -12,13 +14,6 @@ DB_PATH = os.environ.get(
     "DB_PATH",
     "/tmp/expenses.db"
 )
-
-mcp = FastMCP("Expense Tracker")
-
-
-def load_categories():
-    with open(CATEGORIES_PATH, "r", encoding="utf-8") as f:
-        return json.load(f)
 
 
 async def init_db():
@@ -34,6 +29,28 @@ async def init_db():
             )
         """)
         await db.commit()
+
+
+@asynccontextmanager
+async def app_lifespan(server: FastMCP) -> AsyncIterator[None]:
+    """Initialize database when the MCP server starts."""
+    await init_db()
+
+    try:
+        yield
+    finally:
+        pass
+
+
+mcp = FastMCP(
+    "Expense Tracker",
+    lifespan=app_lifespan
+)
+
+
+def load_categories():
+    with open(CATEGORIES_PATH, "r", encoding="utf-8") as f:
+        return json.load(f)
 
 
 @mcp.tool()
@@ -208,10 +225,6 @@ def list_categories():
 
 
 if __name__ == "__main__":
-    import asyncio
-
-    asyncio.run(init_db())
-
     mcp.run(
         transport="http",
         host="0.0.0.0",
